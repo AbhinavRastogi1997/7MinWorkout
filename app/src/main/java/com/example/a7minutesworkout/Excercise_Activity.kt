@@ -1,13 +1,22 @@
 package com.example.a7minutesworkout
 
+import android.media.MediaPlayer
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.speech.tts.TextToSpeech
+import android.util.Log
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_excercise_.*
+import java.util.*
+import kotlin.collections.ArrayList
 
-class Excercise_Activity : AppCompatActivity() {
+class Excercise_Activity : AppCompatActivity(), TextToSpeech.OnInitListener{
 
     private var restTimer: CountDownTimer? = null
     private var restProgress = 0
@@ -17,6 +26,11 @@ class Excercise_Activity : AppCompatActivity() {
 
     private var exList: ArrayList<Excercise>? = null
     private var exPos = -1
+
+    private var tts: TextToSpeech? = null
+
+    private var player: MediaPlayer? = null
+    private var exerciseAdapter: ExerciseStatusAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,8 +47,35 @@ class Excercise_Activity : AppCompatActivity() {
             onBackPressed()
         }
 
+        tts = TextToSpeech(this,this)
         exList = Constants.excerciseList()
         setRestView()
+        setupExerciseStatusRecyclerView()
+    }
+
+    public override fun onDestroy() {
+        if (restTimer != null) {
+            restTimer!!.cancel()
+            restProgress = 0
+        }
+
+        if (excerciseTimer != null) {
+            excerciseTimer!!.cancel()
+            excerciseProgress = 0
+        }
+
+        // TODO (Step 8 - Shutting down the Text to Speech feature when activity is destroyed.)
+        // START
+        if (tts != null) {
+            tts!!.stop()
+            tts!!.shutdown()
+        }
+
+        if(player!=null){
+            player!!.stop()
+        }
+        // END
+        super.onDestroy()
     }
 
     private fun setExcerciseProgress(){
@@ -77,6 +118,10 @@ class Excercise_Activity : AppCompatActivity() {
 
     private fun setRestView(){
 
+        player = MediaPlayer.create(applicationContext,R.raw.press_start)
+        player!!.isLooping = false
+        player!!.start()
+
         llRestView.visibility = View.VISIBLE
         llExcerciseView.visibility = View.GONE
 
@@ -89,6 +134,7 @@ class Excercise_Activity : AppCompatActivity() {
         setRestProgress()
     }
 
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun setExcerciseView(){
         llRestView.visibility = View.GONE
         llExcerciseView.visibility = View.VISIBLE
@@ -101,6 +147,32 @@ class Excercise_Activity : AppCompatActivity() {
         ivImage.setImageResource(exList!![exPos].Img)
         exName.text = exList!![exPos].name
 
+        speakOut(exList!![exPos].name)
         setExcerciseProgress()
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            // set US English as language for tts
+            val result = tts!!.setLanguage(Locale.US)
+
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "The Language specified is not supported!")
+            }
+
+        } else {
+            Log.e("TTS", "Initialization Failed!")
+        } //
+    }
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    private fun speakOut(text: String) {
+        tts!!.speak(text, TextToSpeech.QUEUE_FLUSH, null, "")
+    }
+
+    private fun setupExerciseStatusRecyclerView(){
+        exStatus.layoutManager = LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false)
+        exerciseAdapter = ExerciseStatusAdapter(exList!!,this)
+        exStatus.adapter = exerciseAdapter
     }
 }
