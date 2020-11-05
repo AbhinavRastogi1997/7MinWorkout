@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.item_status.view.*
 
@@ -30,5 +31,12 @@ class ExerciseStatusAdapter(val items: ArrayList<Excercise>, val context: Contex
     override fun onBindViewHolder(holder: viewHolder, position: Int) {
         val model: Excercise = items[position]
         holder.tvItem.text = model.id.toString()
+
+        if(model.isSelected){
+            holder.tvItem.background = ContextCompat.getDrawable(context,R.drawable.white_bg)
+        }
+        else if(model.isCompleted){
+            holder.tvItem.background = ContextCompat.getDrawable(context,R.drawable.selected_mark)
+        }
     }
 }

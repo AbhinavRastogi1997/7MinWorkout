@@ -1,5 +1,7 @@
 package com.example.a7minutesworkout
 
+import android.app.Dialog
+import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +15,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_excercise_.*
+import kotlinx.android.synthetic.main.custom_dialog.*
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -44,7 +47,7 @@ class Excercise_Activity : AppCompatActivity(), TextToSpeech.OnInitListener{
         }
 
         toolbar_excercise.setNavigationOnClickListener{
-            onBackPressed()
+            customDialogBackButton()
         }
 
         tts = TextToSpeech(this,this)
@@ -91,9 +94,14 @@ class Excercise_Activity : AppCompatActivity(), TextToSpeech.OnInitListener{
             override fun onFinish() {
                 if(exPos<11){
                     setRestView()
+                    exList!![exPos].isSelected = false
+                    exList!![exPos].isCompleted = true
+                    exerciseAdapter!!.notifyDataSetChanged()
                 }
                 else{
-                    Toast.makeText(this@Excercise_Activity,"Yo!",Toast.LENGTH_SHORT).show()
+                    finish()
+                    val intent = Intent(this@Excercise_Activity,FinalActivity::class.java)
+                    startActivity(intent)
                 }
             }
         }.start()
@@ -109,9 +117,13 @@ class Excercise_Activity : AppCompatActivity(), TextToSpeech.OnInitListener{
                 tvTimer.text = (10-restProgress).toString()
             }
 
+
+            @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
             override fun onFinish() {
                 exPos++
                 setExcerciseView()
+                exList!![exPos].isSelected = true
+                exerciseAdapter!!.notifyDataSetChanged()
             }
         }.start()
     }
@@ -133,6 +145,7 @@ class Excercise_Activity : AppCompatActivity(), TextToSpeech.OnInitListener{
         ex_n.text = exList!![exPos+1].name
         setRestProgress()
     }
+
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun setExcerciseView(){
@@ -174,5 +187,18 @@ class Excercise_Activity : AppCompatActivity(), TextToSpeech.OnInitListener{
         exStatus.layoutManager = LinearLayoutManager(this,LinearLayoutManager.HORIZONTAL,false)
         exerciseAdapter = ExerciseStatusAdapter(exList!!,this)
         exStatus.adapter = exerciseAdapter
+    }
+
+    private fun customDialogBackButton(){
+        var customDialog = Dialog(this)
+        customDialog.setContentView(R.layout.custom_dialog)
+        customDialog.show()
+        customDialog.tvYes.setOnClickListener{
+            finish()
+            customDialog.dismiss()
+        }
+        customDialog.tvNo.setOnClickListener{
+            customDialog.dismiss()
+        }
     }
 }
